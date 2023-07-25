@@ -1,14 +1,14 @@
-const targetURL = "https://harivmasoor.github.io/Podify/";
+const targetOrigin = "https://harivmasoor.github.io";
 
 let mediaRecorder;
 let audioChunks = [];
 let currentStream;
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'captureTabAudio' && sender.url.startsWith(targetURL)) {
+    if (request.action === 'captureTabAudio' && sender.url.startsWith(targetOrigin)) {
         if (mediaRecorder && mediaRecorder.state === 'recording') {
             sendResponse({ status: "Already capturing" });
-            return;
+            return true;
         }
 
         chrome.tabCapture.capture({
@@ -31,15 +31,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
             mediaRecorder.onstop = () => {
                 const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                const reader = new FileReader();
-
-                reader.readAsDataURL(audioBlob); 
-                reader.onloadend = () => {
-                    const audioDataUrl = reader.result;
-                    chrome.tabs.sendMessage(sender.tab.id, {
-                        audioDataUrl: audioDataUrl
-                    });
-                };
+                chrome.tabs.sendMessage(sender.tab.id, {
+                    audioBlob: audioBlob
+                }, response => {
+                    if(chrome.runtime.lastError) {
+                        console.error("Failed to send blob:", chrome.runtime.lastError);
+                    } else {
+                        console.log("Content script received blob:", response);
+                    }
+                });
 
                 stopStream(currentStream);
             };
@@ -60,7 +60,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
         return true;
     } else {
-        sendResponse({ status: "Invalid request" });
+        sendResponse({ error: "Invalid request" });
         return true;
     }
 });
@@ -70,6 +70,7 @@ function stopStream(stream) {
         stream.getTracks().forEach(track => track.stop());
     }
 }
+
 
 
 
