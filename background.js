@@ -20,7 +20,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             }
         });
 
-        return true;  // This keeps the message channel open for sendResponse until it's called.
+        return true;  // This should be kept to handle async events in MV2 but might not be effective in MV3.
     }
 });
+
 
