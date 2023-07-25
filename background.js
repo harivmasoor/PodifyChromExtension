@@ -38,11 +38,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             };
 
             mediaRecorder.start();
-            // Remove the timeout since we'll manually stop with another button
-            // setTimeout(() => mediaRecorder.stop(), 5000);
         });
 
-        // Indicate we wish to send a response asynchronously
+        sendResponse({status: "success"});  // <--- Response added here
         return true;
     }
 
@@ -51,6 +49,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (mediaRecorder && mediaRecorder.state === "recording") {
             mediaRecorder.stop();
         }
+        sendResponse({status: "success"});  // <--- And here
         return true;
     }
 });
@@ -60,4 +59,5 @@ function stopStream(stream) {
         stream.getTracks().forEach(track => track.stop());
     }
 }
+
 

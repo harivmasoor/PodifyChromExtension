@@ -11,13 +11,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     startCaptureButton.addEventListener('click', () => {
       statusDiv.textContent = 'Capturing...';
-      chrome.runtime.sendMessage({action: 'startCaptureTabAudio'}, (response) => {
-        if(chrome.runtime.lastError) {
-          statusDiv.textContent = chrome.runtime.lastError.message;
-          return;
+      chrome.runtime.sendMessage({action: 'captureTabAudio'}, (response) => {
+        if (response && response.error) {
+            statusDiv.textContent = response.error;
+            return;
         }
-        statusDiv.textContent = 'Capturing... Click "End Capture" to stop.';
-      });
+        if(response && response.status === "success") {
+            statusDiv.textContent = 'Capturing...';
+        } else {
+            statusDiv.textContent = 'Error occurred!';
+        }
+    });
     });
 
     endCaptureButton.addEventListener('click', () => {
