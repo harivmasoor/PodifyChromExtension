@@ -2,9 +2,15 @@ const targetURL = "https://harivmasoor.github.io/Podify/";
 
 let mediaRecorder;
 let audioChunks = [];
+let currentStream;
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'captureTabAudio' && sender.url.startsWith(targetURL)) {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            sendResponse({ status: "Already capturing" });
+            return;
+        }
+
         chrome.tabCapture.capture({
             audio: true,
             video: false
@@ -15,6 +21,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 return;
             }
 
+            currentStream = stream;
             mediaRecorder = new MediaRecorder(stream);
             audioChunks = [];
 
@@ -34,11 +41,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     });
                 };
 
-                stopStream(stream);
+                stopStream(currentStream);
             };
 
             mediaRecorder.start();
-
             sendResponse({ status: "Started capturing" });
 
         });
@@ -52,8 +58,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         } else {
             sendResponse({ status: "No active recording found" });
         }
+        return true;
     } else {
         sendResponse({ status: "Invalid request" });
+        return true;
     }
 });
 
