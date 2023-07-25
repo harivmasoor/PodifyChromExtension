@@ -1,19 +1,15 @@
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg.audioBlob) {
-      downloadAudio(msg.audioBlob);
+  if (msg.audioDataUrl) {
+      downloadAudioFromDataUrl(msg.audioDataUrl);
       sendResponse("Download triggered");
   }
   // Indicate we wish to send a response asynchronously
   return true;
 });
 
-function downloadAudio(audioBlob) {
-  const url = URL.createObjectURL(audioBlob);
-
+function downloadAudioFromDataUrl(dataUrl) {
   const a = document.createElement('a');
-  a.href = url;
+  a.href = dataUrl;
   a.download = 'tab-audio.webm';
   a.click();
-
-  URL.revokeObjectURL(url);
 }
