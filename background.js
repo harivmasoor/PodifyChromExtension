@@ -1,7 +1,9 @@
 const targetOrigin = "https://harivmasoor.github.io";
+let mediaRecorder; // Moved outside to be accessible for both start and stop actions
+let audioChunks = [];
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'captureTabAudio' && sender.origin === targetOrigin) {
+    if (request.action === 'startCaptureTabAudio' && sender.origin === targetOrigin) {
         chrome.tabCapture.capture({
             audio: true,
             video: false
@@ -12,8 +14,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 return;
             }
 
-            const mediaRecorder = new MediaRecorder(stream);
-            let audioChunks = [];
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
 
             mediaRecorder.ondataavailable = (event) => {
                 audioChunks.push(event.data);
@@ -36,10 +38,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             };
 
             mediaRecorder.start();
-            setTimeout(() => mediaRecorder.stop(), 5000); // Recording for 5 seconds for demonstration
+            // Remove the timeout since we'll manually stop with another button
+            // setTimeout(() => mediaRecorder.stop(), 5000);
         });
 
         // Indicate we wish to send a response asynchronously
+        return true;
+    }
+
+    // Handling the "End Capture" action
+    if (request.action === 'endCaptureTabAudio') {
+        if (mediaRecorder && mediaRecorder.state === "recording") {
+            mediaRecorder.stop();
+        }
         return true;
     }
 });
