@@ -12,16 +12,14 @@ document.addEventListener('DOMContentLoaded', function() {
     startCaptureButton.addEventListener('click', () => {
       statusDiv.textContent = 'Capturing...';
       chrome.runtime.sendMessage({action: 'captureTabAudio'}, (response) => {
-        if (response && response.error) {
+        if (response.error) {
             statusDiv.textContent = response.error;
-            return;
-        }
-        if(response && response.status === "success") {
-            statusDiv.textContent = 'Capturing...';
+        } else if (response.status) {
+            statusDiv.textContent = response.status;
         } else {
-            statusDiv.textContent = 'Error occurred!';
+            statusDiv.textContent = 'Unknown response from background script.';
         }
-    });
+    });      
     });
 
     endCaptureButton.addEventListener('click', () => {

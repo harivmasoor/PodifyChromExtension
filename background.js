@@ -1,6 +1,4 @@
 const targetOrigin = "https://harivmasoor.github.io";
-let mediaRecorder; // Moved outside to be accessible for both start and stop actions
-let audioChunks = [];
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'startCaptureTabAudio' && sender.origin === targetOrigin) {
@@ -14,8 +12,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 return;
             }
 
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
+            const mediaRecorder = new MediaRecorder(stream);
+            let audioChunks = [];
 
             mediaRecorder.ondataavailable = (event) => {
                 audioChunks.push(event.data);
@@ -28,9 +26,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     audioBlob: audioBlob
                 }, response => {
                     if(chrome.runtime.lastError) {
-                        console.error("Failed to send blob:", chrome.runtime.lastError);
+                        sendResponse({error: "Failed to send blob: " + chrome.runtime.lastError.message});
                     } else {
-                        console.log("Content script received blob:", response);
+                        sendResponse({status: "Content script received blob"});
                     }
                 });
 
@@ -38,19 +36,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             };
 
             mediaRecorder.start();
+            setTimeout(() => mediaRecorder.stop(), 5000); // Recording for 5 seconds for demonstration
         });
 
-        sendResponse({status: "success"});  // <--- Response added here
-        return true;
+        return true; // Keeps the port open for async response
     }
-
-    // Handling the "End Capture" action
-    if (request.action === 'endCaptureTabAudio') {
-        if (mediaRecorder && mediaRecorder.state === "recording") {
-            mediaRecorder.stop();
-        }
-        sendResponse({status: "success"});  // <--- And here
-        return true;
+    else {
+        sendResponse({error: "Invalid request"});
     }
 });
 
