@@ -1,5 +1,8 @@
 const targetOrigin = "https://harivmasoor.github.io";
 
+let mediaRecorder;
+let audioChunks = [];
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'captureTabAudio' && sender.origin === targetOrigin) {
         chrome.tabCapture.capture({
@@ -8,12 +11,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }, (stream) => {
             if (chrome.runtime.lastError) {
                 console.error(chrome.runtime.lastError);
-                sendResponse({error: chrome.runtime.lastError.message});
+                sendResponse({ error: chrome.runtime.lastError.message });
                 return;
             }
 
-            const mediaRecorder = new MediaRecorder(stream);
-            let audioChunks = [];
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
 
             mediaRecorder.ondataavailable = (event) => {
                 audioChunks.push(event.data);
@@ -23,17 +26,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                 const reader = new FileReader();
 
-                reader.readAsDataURL(audioBlob);
-                reader.onloadend = function() {
-                    const base64data = reader.result;
+                reader.readAsDataURL(audioBlob); 
+                reader.onloadend = () => {
+                    const audioDataUrl = reader.result;
                     chrome.tabs.sendMessage(sender.tab.id, {
-                        audioDataUrl: base64data
-                    }, response => {
-                        if(chrome.runtime.lastError) {
-                            console.error("Failed to send data URL:", chrome.runtime.lastError);
-                        } else {
-                            console.log("Content script received data URL:", response);
-                        }
+                        audioDataUrl: audioDataUrl
                     });
                 };
 
@@ -41,11 +38,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             };
 
             mediaRecorder.start();
-            setTimeout(() => mediaRecorder.stop(), 5000); // Recording for 5 seconds for demonstration
+
+            sendResponse({ status: "Started capturing" });
+
         });
 
         // Indicate we wish to send a response asynchronously
         return true;
+    } else if (request.action === 'endCaptureTabAudio') {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            sendResponse({ status: "Ended capturing" });
+        } else {
+            sendResponse({ status: "No active recording found" });
+        }
+    } else {
+        sendResponse({ status: "Invalid request" });
     }
 });
 
