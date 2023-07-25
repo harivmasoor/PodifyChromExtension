@@ -1,19 +1,23 @@
 const targetOrigin = "https://harivmasoor.github.io";
+let mediaRecorder;
+let audioChunks = [];
+let currentStream;
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'startCaptureTabAudio' && sender.origin === targetOrigin) {
+    if (request.action === 'captureTabAudio' && sender.origin === targetOrigin) {
         chrome.tabCapture.capture({
             audio: true,
             video: false
         }, (stream) => {
             if (chrome.runtime.lastError) {
-                console.error(chrome.runtime.lastError);
-                sendResponse({error: chrome.runtime.lastError.message});
+                sendResponse({ error: chrome.runtime.lastError.message });
                 return;
             }
 
-            const mediaRecorder = new MediaRecorder(stream);
-            let audioChunks = [];
+            currentStream = stream;
+
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
 
             mediaRecorder.ondataavailable = (event) => {
                 audioChunks.push(event.data);
@@ -26,23 +30,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     audioBlob: audioBlob
                 }, response => {
                     if(chrome.runtime.lastError) {
-                        sendResponse({error: "Failed to send blob: " + chrome.runtime.lastError.message});
+                        console.error("Failed to send blob:", chrome.runtime.lastError);
                     } else {
-                        sendResponse({status: "Content script received blob"});
+                        console.log("Content script received blob:", response);
                     }
                 });
 
-                stopStream(stream);
+                stopStream(currentStream);
             };
 
             mediaRecorder.start();
-            setTimeout(() => mediaRecorder.stop(), 5000); // Recording for 5 seconds for demonstration
-        });
 
-        return true; // Keeps the port open for async response
-    }
-    else {
-        sendResponse({error: "Invalid request"});
+            sendResponse({ status: "Recording started" });
+
+        });
+        return true;  // to indicate that the response is sent asynchronously
+    } else if (request.action === 'endCaptureTabAudio') {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            sendResponse({ status: "Recording stopped" });
+        } else {
+            sendResponse({ error: "MediaRecorder not active" });
+        }
+        return true;  // to indicate that the response is sent asynchronously
     }
 });
 
@@ -51,5 +61,6 @@ function stopStream(stream) {
         stream.getTracks().forEach(track => track.stop());
     }
 }
+
 
 
