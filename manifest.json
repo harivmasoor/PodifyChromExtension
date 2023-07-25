@@ -20,6 +20,9 @@
       "matches": ["https://harivmasoor.github.io/Podify/*"],
       "js": ["contentScript.js"]
     }
-  ]
+  ],
+  "host_permissions": [
+    "https://harivmasoor.github.io/"
+]
 }
 

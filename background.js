@@ -37,6 +37,7 @@ chrome.runtime.onMessage.addListener((request, sender) => {
       mediaRecorder.start();
       setTimeout(() => mediaRecorder.stop(), 5000); // Recording for 5 seconds for demonstration
     });
+    return true;
   }
 });
 
