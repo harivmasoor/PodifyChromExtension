@@ -1,10 +1,10 @@
-const targetOrigin = "https://harivmasoor.github.io";
+const targetURL = "https://harivmasoor.github.io/Podify/";
 
 let mediaRecorder;
 let audioChunks = [];
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'captureTabAudio' && sender.origin === targetOrigin) {
+    if (request.action === 'captureTabAudio' && sender.url.startsWith(targetURL)) {
         chrome.tabCapture.capture({
             audio: true,
             video: false
@@ -62,6 +62,7 @@ function stopStream(stream) {
         stream.getTracks().forEach(track => track.stop());
     }
 }
+
 
 
 
