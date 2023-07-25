@@ -4,10 +4,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             audio: true,
             video: false
         }, (stream) => {
+            // Check if there's an error.
+            if (chrome.runtime.lastError) {
+                console.error(chrome.runtime.lastError);
+                sendResponse({ error: chrome.runtime.lastError.message });
+                return;
+            }
+
             // You now have the tab's audio stream.
-            // You can pass this stream to your web app.
-            sendResponse({ streamId: stream.id });
+            // You can pass this stream to your web app or handle it here as needed.
+            if (stream && stream.id) {
+                sendResponse({ streamId: stream.id });
+            } else {
+                sendResponse({ error: 'Failed to capture audio.' });
+            }
         });
+
+        return true;  // This keeps the message channel open for sendResponse until it's called.
     }
-    return true;  // This keeps the message channel open for sendResponse.
 });
+
