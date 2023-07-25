@@ -1,5 +1,5 @@
-const targetOrigin = "https://harivmasoor.github.io";
 
+const targetOrigin = "https://harivmasoor.github.io";
 let mediaRecorder;
 let audioChunks = [];
 let currentStream;
@@ -31,22 +31,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
             mediaRecorder.onstop = () => {
                 const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const audioDataUrl = URL.createObjectURL(audioBlob);
                 chrome.tabs.sendMessage(sender.tab.id, {
-                    audioBlob: audioBlob
+                    audioDataUrl: audioDataUrl
                 }, response => {
                     if(chrome.runtime.lastError) {
-                        console.error("Failed to send blob:", chrome.runtime.lastError);
+                        console.error("Failed to send audio:", chrome.runtime.lastError);
                     } else {
-                        console.log("Content script received blob:", response);
+                        console.log("Content script received audio:", response);
                     }
                 });
-
                 stopStream(currentStream);
             };
 
             mediaRecorder.start();
             sendResponse({ status: "Started capturing" });
-
         });
 
         // Indicate we wish to send a response asynchronously
@@ -54,13 +53,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } else if (request.action === 'endCaptureTabAudio') {
         if (mediaRecorder && mediaRecorder.state === 'recording') {
             mediaRecorder.stop();
-            sendResponse({ status: "Ended capturing" });
+            sendResponse({ status: "Stopped capturing and sent audio for download" });
         } else {
-            sendResponse({ status: "No active recording found" });
+            sendResponse({ status: "No active capture to stop" });
         }
-        return true;
-    } else {
-        sendResponse({ error: "Invalid request" });
         return true;
     }
 });
@@ -70,9 +66,3 @@ function stopStream(stream) {
         stream.getTracks().forEach(track => track.stop());
     }
 }
-
-
-
-
-
-
