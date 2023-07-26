@@ -111,6 +111,8 @@ function startRecording() {
   toggleRecordingButton.innerText = 'Stop Recording';
 }
 
+let lastRecordedBlob;  // This will store the last recorded blob
+
 function stopRecording() {
   if (!mediaRecorder) return;
 
@@ -118,12 +120,22 @@ function stopRecording() {
   isRecording = false;
   toggleRecordingButton.innerText = 'Start Recording';
 
+  console.log('Number of recorded chunks:', recordedChunks.length);
+  if (recordedChunks.length > 0) {
+      console.log('Size of first chunk:', recordedChunks[0].size);
+      // Create and store the blob here
+      lastRecordedBlob = new Blob(recordedChunks, { type: 'audio/webm' });
+  }
+
   // Enable the download button after stopping the recording
   downloadButton.disabled = false;
   
   // Send the recorded audio to the backend for transcription
-  sendToAPI(recordedChunks);
+  sendToAPI();
+  shutdownReceiver();
 }
+
+
 
 function downloadRecording() {
   const blob = new Blob(recordedChunks, {
@@ -139,10 +151,17 @@ function downloadRecording() {
   window.URL.revokeObjectURL(url);
 }
 
-async function sendToAPI(data) {
+async function sendToAPI() {
+  if (!lastRecordedBlob) {
+    console.error("No audio data found");
+    return;
+  }
+
+  // Use the lastRecordedBlob directly
   const formData = new FormData();
-  formData.append('audio', new Blob([data], { type: 'audio/webm' }), 'audio.webm');
+  formData.append('audio', lastRecordedBlob, 'audio.webm');
   
+  // The rest of the function remains unchanged
   try {
     const response = await fetch('https://podify-backend.onrender.com/transcribe', {
       method: 'POST',

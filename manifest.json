@@ -10,8 +10,8 @@
     "service_worker": "service-worker.js"
   },
   "permissions": ["tabs", "tabCapture"],
-  "host_permissions": ["https://podify-backend.onrender.com/", "http://*/*", "https://*/*"],
+  "host_permissions": ["https://podify-backend.onrender.com/*", "http://*/*", "https://*/*"],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://podify-backend.onrender.com;"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://podify-backend.onrender.com/transcribe;"
 }
 }
