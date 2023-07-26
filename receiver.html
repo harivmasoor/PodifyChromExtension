@@ -4,14 +4,80 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>receiver</title>
+    <title>Podify Magic Transcriber</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f2f2f2;
+        margin: 0;
+        padding: 0;
+      }
+      
+      h1 {
+        text-align: center;
+        margin-top: 50px;
+        margin-bottom: 30px;
+        color: #333;
+      }
+      
+      p {
+        text-align: center;
+        font-size: 18px;
+        color: #666;
+      }
+      
+      button {
+        display: block;
+        margin: 0 auto;
+        margin-top: 30px;
+        padding: 10px 20px;
+        font-size: 16px;
+        font-weight: bold;
+        color: #fff;
+        background-color: #007bff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      
+      button:hover {
+        background-color: #0069d9;
+      }
+      
+      button:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+      
+      .logo {
+        display: block;
+        margin: 0 auto;
+        margin-top: 50px;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        background-image: url('./images/icon128.png');
+        background-size: cover;
+        background-position: center;
+      }
+      
+      audio {
+        display: block;
+        margin: 0 auto;
+        margin-top: 50px;
+        width: 100%;
+      }
+    </style>
   </head>
-
   <body>
+    <h1>Podify Magic Transcriber</h1>
     <p id="echo-msg"></p>
     <button id="toggle-recording">Start Recording</button>
     <button id="download-recording" disabled>Download Recording</button>
-    <audio id="player" controls width="100%"></audio>
+    
+    <div class="logo"></div>
+    
+    <audio id="player" controls></audio>
     <script src="./receiver.js"></script>
   </body>
 </html>

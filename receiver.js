@@ -3,9 +3,15 @@ let mediaRecorder = null;
 let recordedChunks = [];
 let isRecording = false;
 
+// Getting references to buttons and other elements
+const toggleRecordingButton = document.getElementById('toggle-recording');
+const downloadButton = document.getElementById('download-recording');
+const player = document.getElementById('player');
+const echoMessageElement = document.getElementById('echo-msg');
+const transcriptionBox = document.getElementById('transcriptionBox');
+
 function printErrorMessage(message) {
-  const element = document.getElementById('echo-msg');
-  element.innerText = message;
+  echoMessageElement.innerText = message;
   console.error(message);
 }
 
@@ -15,7 +21,6 @@ function shutdownReceiver() {
     return;
   }
 
-  const player = document.getElementById('player');
   player.srcObject = null;
   const tracks = currentStream.getTracks();
   for (let i = 0; i < tracks.length; ++i) {
@@ -25,22 +30,21 @@ function shutdownReceiver() {
 }
 
 function playCapturedStream(stream) {
-    if (!stream) {
-      printErrorMessage(
-        'Error starting tab capture: ' +
-          (chrome.runtime.lastError.message || 'UNKNOWN')
-      );
-      return;
-    }
-    if (currentStream != null) {
-      shutdownReceiver();
-    }
-    currentStream = stream;
-    const player = document.getElementById('player');
-    player.setAttribute('controls', '1');
-    player.srcObject = stream;
-    player.play();
-  }  
+  if (!stream) {
+    printErrorMessage(
+      'Error starting tab capture: ' +
+        (chrome.runtime.lastError.message || 'UNKNOWN')
+    );
+    return;
+  }
+  if (currentStream != null) {
+    shutdownReceiver();
+  }
+  currentStream = stream;
+  player.setAttribute('controls', '1');
+  player.srcObject = stream;
+  player.play();
+}
 
 function testGetMediaStreamId(targetTabId, consumerTabId) {
   chrome.tabCapture.getMediaStreamId(
@@ -56,14 +60,14 @@ function testGetMediaStreamId(targetTabId, consumerTabId) {
 
       navigator.webkitGetUserMedia(
         {
-            audio: {
-              mandatory: {
-                chromeMediaSource: 'tab',
-                chromeMediaSourceId: streamId
-              }
-            },
-            video: false
+          audio: {
+            mandatory: {
+              chromeMediaSource: 'tab',
+              chromeMediaSourceId: streamId
+            }
           },
+          video: false
+        },
         function (stream) {
           playCapturedStream(stream);
         },
@@ -75,56 +79,95 @@ function testGetMediaStreamId(targetTabId, consumerTabId) {
   );
 }
 
-document.getElementById('toggle-recording').addEventListener('click', function() {
-    if (isRecording) {
-        stopRecording();
-    } else {
-        startRecording();
-    }
+toggleRecordingButton.addEventListener('click', function() {
+  if (isRecording) {
+    stopRecording();
+  } else {
+    startRecording();
+  }
 });
 
-document.getElementById('download-recording').addEventListener('click', function() {
-    downloadRecording();
+downloadButton.addEventListener('click', function() {
+  downloadRecording();
 });
 
 function startRecording() {
-    recordedChunks = [];
-    mediaRecorder = new MediaRecorder(currentStream);
+  // Disable the download button when starting a new recording
+  downloadButton.disabled = true;
 
-    // Event handler to collect the recorded chunks
-    mediaRecorder.ondataavailable = function(event) {
-        if (event.data.size > 0) {
-            recordedChunks.push(event.data);
-        }
-    };
+  recordedChunks = [];
+  mediaRecorder = new MediaRecorder(currentStream);
 
-    // Start the recording
-    mediaRecorder.start();
-    isRecording = true;
-    document.getElementById('toggle-recording').innerText = 'Stop Recording';
+  // Event handler to collect the recorded chunks
+  mediaRecorder.ondataavailable = function(event) {
+    if (event.data.size > 0) {
+      recordedChunks.push(event.data);
+    }
+  };
+
+  // Start the recording
+  mediaRecorder.start();
+  isRecording = true;
+  toggleRecordingButton.innerText = 'Stop Recording';
 }
 
 function stopRecording() {
-    if (!mediaRecorder) return;
+  if (!mediaRecorder) return;
 
-    mediaRecorder.stop();
-    isRecording = false;
-    document.getElementById('toggle-recording').innerText = 'Start Recording';
-    document.getElementById('download-recording').disabled = false;
+  mediaRecorder.stop();
+  isRecording = false;
+  toggleRecordingButton.innerText = 'Start Recording';
+
+  // Enable the download button after stopping the recording
+  downloadButton.disabled = false;
+  
+  // Send the recorded audio to the backend for transcription
+  sendToAPI(recordedChunks);
 }
 
 function downloadRecording() {
-    const blob = new Blob(recordedChunks, {
-        type: 'audio/webm'
+  const blob = new Blob(recordedChunks, {
+    type: 'audio/webm'
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  document.body.appendChild(a);
+  a.style = 'display: none';
+  a.href = url;
+  a.download = 'recorded_audio.webm';
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
+
+async function sendToAPI(data) {
+  const formData = new FormData();
+  formData.append('audio', new Blob([data], { type: 'audio/webm' }), 'audio.webm');
+  
+  try {
+    const response = await fetch('https://podify-backend.onrender.com/transcribe', {
+      method: 'POST',
+      body: formData
     });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    document.body.appendChild(a);
-    a.style = 'display: none';
-    a.href = url;
-    a.download = 'recorded_audio.webm';
-    a.click();
-    window.URL.revokeObjectURL(url);
+
+    if (!response.ok) {
+      const responseData = await response.text();
+      console.error(`Server responded with ${response.status}: ${responseData}`);
+      return { error: `Server responded with ${response.status}: ${responseData}` };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('There was a problem with the fetch operation:', error.message);
+    return { error: 'There was a problem with the fetch operation: ' + error.message };
+  }
+}
+
+function displayTranscription(result) {
+  if (result && result.transcript) {
+    transcriptionBox.value = result.transcript;
+  } else {
+    transcriptionBox.value = "Failed to get transcription.";
+  }
 }
 
 chrome.runtime.onMessage.addListener(function (request) {

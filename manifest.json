@@ -4,10 +4,14 @@
   "version": "1",
   "manifest_version": 3,
   "action": {
-    "default_icon": "images/icon48.png"
+    "default_icon": "icon48.png"
   },
   "background": {
     "service_worker": "service-worker.js"
   },
-  "permissions": ["tabs", "tabCapture"]
+  "permissions": ["tabs", "tabCapture"],
+  "host_permissions": ["https://podify-backend.onrender.com/", "http://*/*", "https://*/*"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://podify-backend.onrender.com;"
+}
 }
