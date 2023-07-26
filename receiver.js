@@ -1,4 +1,7 @@
 let currentStream = null;
+let mediaRecorder = null;
+let recordedChunks = [];
+let isRecording = false;
 
 function printErrorMessage(message) {
   const element = document.getElementById('echo-msg');
@@ -70,6 +73,58 @@ function testGetMediaStreamId(targetTabId, consumerTabId) {
       );
     }
   );
+}
+
+document.getElementById('toggle-recording').addEventListener('click', function() {
+    if (isRecording) {
+        stopRecording();
+    } else {
+        startRecording();
+    }
+});
+
+document.getElementById('download-recording').addEventListener('click', function() {
+    downloadRecording();
+});
+
+function startRecording() {
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(currentStream);
+
+    // Event handler to collect the recorded chunks
+    mediaRecorder.ondataavailable = function(event) {
+        if (event.data.size > 0) {
+            recordedChunks.push(event.data);
+        }
+    };
+
+    // Start the recording
+    mediaRecorder.start();
+    isRecording = true;
+    document.getElementById('toggle-recording').innerText = 'Stop Recording';
+}
+
+function stopRecording() {
+    if (!mediaRecorder) return;
+
+    mediaRecorder.stop();
+    isRecording = false;
+    document.getElementById('toggle-recording').innerText = 'Start Recording';
+    document.getElementById('download-recording').disabled = false;
+}
+
+function downloadRecording() {
+    const blob = new Blob(recordedChunks, {
+        type: 'audio/webm'
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    document.body.appendChild(a);
+    a.style = 'display: none';
+    a.href = url;
+    a.download = 'recorded_audio.webm';
+    a.click();
+    window.URL.revokeObjectURL(url);
 }
 
 chrome.runtime.onMessage.addListener(function (request) {
