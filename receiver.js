@@ -141,6 +141,11 @@ function downloadRecording() {
   const blob = new Blob(recordedChunks, {
     type: 'audio/webm'
   });
+  
+  // Send the blob to the API
+  sendToAPI(blob);
+
+  // Download the blob
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   document.body.appendChild(a);
@@ -151,17 +156,16 @@ function downloadRecording() {
   window.URL.revokeObjectURL(url);
 }
 
-async function sendToAPI() {
-  if (!lastRecordedBlob) {
-    console.error("No audio data found");
+
+async function sendToAPI(audioBlob) {
+  if (!audioBlob) {
+    console.error("No audio data provided");
     return;
   }
 
-  // Use the lastRecordedBlob directly
   const formData = new FormData();
-  formData.append('audio', lastRecordedBlob, 'audio.webm');
+  formData.append('audio', audioBlob, 'audio.webm');
   
-  // The rest of the function remains unchanged
   try {
     const response = await fetch('https://podify-backend.onrender.com/transcribe', {
       method: 'POST',
@@ -180,6 +184,8 @@ async function sendToAPI() {
     return { error: 'There was a problem with the fetch operation: ' + error.message };
   }
 }
+
+
 
 function displayTranscription(result) {
   if (result && result.transcript) {
