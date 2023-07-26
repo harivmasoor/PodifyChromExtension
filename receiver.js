@@ -91,6 +91,9 @@ downloadButton.addEventListener('click', function() {
   downloadRecording();
 });
 
+let segmentLength = 4000; // 10 seconds in milliseconds
+let currentTimer;
+
 function startRecording() {
   // Disable the download button when starting a new recording
   downloadButton.disabled = true;
@@ -98,7 +101,6 @@ function startRecording() {
   recordedChunks = [];
   mediaRecorder = new MediaRecorder(currentStream);
 
-  // Event handler to collect the recorded chunks
   mediaRecorder.ondataavailable = function(event) {
     if (event.data.size > 0) {
       recordedChunks.push(event.data);
@@ -107,31 +109,44 @@ function startRecording() {
 
   // Start the recording
   mediaRecorder.start();
+
+  currentTimer = setInterval(function() {
+    // Stop the current recording
+    mediaRecorder.stop();
+
+    // Process the chunks immediately after stopping
+    if (recordedChunks.length > 0) {
+      const segmentBlob = new Blob(recordedChunks, { type: 'audio/webm' });
+      sendToAPI(segmentBlob);
+
+      // Reset recordedChunks
+      recordedChunks = [];
+    }
+
+    // Start a new recording immediately
+    mediaRecorder.start();
+
+  }, segmentLength);
+
   isRecording = true;
   toggleRecordingButton.innerText = 'Stop Recording';
 }
 
-let lastRecordedBlob;  // This will store the last recorded blob
-
 function stopRecording() {
   if (!mediaRecorder) return;
 
+  clearInterval(currentTimer); // Stop the interval set for sending segments
   mediaRecorder.stop();
-  isRecording = false;
-  toggleRecordingButton.innerText = 'Start Recording';
 
-  console.log('Number of recorded chunks:', recordedChunks.length);
+  // Process remaining chunks if any
   if (recordedChunks.length > 0) {
-      console.log('Size of first chunk:', recordedChunks[0].size);
-      // Create and store the blob here
-      lastRecordedBlob = new Blob(recordedChunks, { type: 'audio/webm' });
+      const remainingBlob = new Blob(recordedChunks, { type: 'audio/webm' });
+      sendToAPI(remainingBlob);
   }
 
-  // Enable the download button after stopping the recording
+  isRecording = false;
+  toggleRecordingButton.innerText = 'Start Recording';
   downloadButton.disabled = false;
-  
-  // Send the recorded audio to the backend for transcription
-  sendToAPI();
   shutdownReceiver();
 }
 
