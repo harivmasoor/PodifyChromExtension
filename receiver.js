@@ -91,7 +91,7 @@ downloadButton.addEventListener('click', function() {
   downloadRecording();
 });
 
-let segmentLength = 15000; // 15 seconds in milliseconds
+let segmentLength = 7000; // 15 seconds in milliseconds
 let currentTimer;
 
 function startRecording() {
@@ -148,6 +148,7 @@ function stopRecording() {
   toggleRecordingButton.innerText = 'Start Recording';
   downloadButton.disabled = false;
   shutdownReceiver();
+  window.close();
 }
 
 
