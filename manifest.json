@@ -1,5 +1,5 @@
 {
-  "name": "Tab Capture Example",
+  "name": "Podify Magic Transcriber",
   "description": "Capture a tab and play in a <video> element in a separate window.",
   "version": "1",
   "manifest_version": 3,
