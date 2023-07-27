@@ -1,6 +1,6 @@
 {
   "name": "Podify Magic Transcriber",
-  "description": "Capture a tab and play in a <video> element in a separate window.",
+  "description": "Transribe podcasts with Podify Magic Transcriber",
   "version": "1",
   "manifest_version": 3,
   "action": {
