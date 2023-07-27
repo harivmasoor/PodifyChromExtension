@@ -91,7 +91,7 @@ downloadButton.addEventListener('click', function() {
   downloadRecording();
 });
 
-let segmentLength = 7000; // 15 seconds in milliseconds
+let segmentLength = 4000; // 4 seconds in milliseconds
 let currentTimer;
 
 function startRecording() {
